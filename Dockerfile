@@ -10,7 +10,7 @@ RUN apt-get update && \
 # تعيين المتغيرات البيئية (يمكن تعديلها عند تشغيل الحاوية)
 ENV STREAM_URL="https://uselector.cdn.intigral-ott.net/MB2H/MB2H.isml/manifest.mpd"
 ENV AUTH_TOKEN="58fa20cf6055f3aefc15707992c0b685"
-ENV DECRYPTION_KEY="your_decryption_key" # إضافة مفتاح فك التشفير إذا كان البث مشفرًا
+ENV DECRYPTION_KEY="58fa20cf6055f3aefc15707992c0b685"
 
 # إنشاء دليل HLS لمحتوى البث
 RUN mkdir -p /var/www/hls

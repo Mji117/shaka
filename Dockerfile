@@ -1,29 +1,42 @@
+FROM ubuntu:20.04
 
-# استخدام صورة Ubuntu الأساسية
-FROM ubuntu:22.04
+ENV DEBIAN_FRONTEND=noninteractive
 
-# تثبيت FFmpeg و Nginx
-RUN apt-get update && \
-    apt-get install -y ffmpeg nginx && \
-    apt-get clean
+# تحديث الحزم وتثبيت الحزم الأساسية
+RUN apt-get update && apt-get install -y \
+    software-properties-common \
+    wget \
+    curl \
+    unzip \
+    sudo \
+    nano \
+    gnupg2 \
+    mysql-server \
+    nginx \
+    php-fpm php-mysql php-cli php-mbstring php-xml php-curl php-zip php-gd php-ldap \
+    && apt-get clean
 
-# تعيين المتغيرات البيئية (يمكن تعديلها عند تشغيل الحاوية)
-ENV STREAM_URL="https://uselector.cdn.intigral-ott.net/MB2H/MB2H.isml/manifest.mpd"
-ENV AUTH_TOKEN="58fa20cf6055f3aefc15707992c0b685"
-ENV DECRYPTION_KEY="58fa20cf6055f3aefc15707992c0b685"
+# تنزيل Ministra Stalker من Archive.org
+RUN wget https://archive.org/download/ministra-5.6.0/ministra-5.6.0.zip -O /tmp/ministra.zip && \
+    unzip /tmp/ministra.zip -d /var/www/html && \
+    rm /tmp/ministra.zip
 
-# إنشاء دليل HLS لمحتوى البث
-RUN mkdir -p /var/www/hls
+# إعداد صلاحيات الملفات
+RUN chown -R www-data:www-data /var/www/html/stalker_portal && \
+    chmod -R 755 /var/www/html/stalker_portal
 
-# نسخ ملفات الإعدادات الخاصة بـ Nginx والسكريبت
-COPY nginx.conf /etc/nginx/sites-enabled/default
-COPY start.sh /start.sh
+# تهيئة MySQL
+RUN service mysql start && \
+    mysql -e "CREATE DATABASE stalker_db;" && \
+    mysql -e "CREATE USER 'stalker'@'localhost' IDENTIFIED BY 'stalker_pass';" && \
+    mysql -e "GRANT ALL PRIVILEGES ON stalker_db.* TO 'stalker'@'localhost';" && \
+    mysql -e "FLUSH PRIVILEGES;"
 
-# منح الصلاحيات للسكريبت
-RUN chmod +x /start.sh
+# إعداد Nginx
+COPY nginx.conf /etc/nginx/sites-available/default
 
-# فتح منفذ Nginx
-EXPOSE 80
+# فتح المنافذ المطلوبة
+EXPOSE 80 443
 
-# تشغيل السكريبت عند بدء الحاوية
-CMD ["/start.sh"]
+# تشغيل الخدمات
+CMD service mysql start && service nginx start && service php7.4-fpm start && tail -f /dev/null
